@@ -5,9 +5,11 @@ import java.util.List;
 
 public class Order {
     private final List<OrderEntry> orderEntries;
+    private final long orderId;
 
-    public Order() {
+    public Order(long orderId) {
         this.orderEntries = new ArrayList<>();
+        this.orderId = orderId;
     }
 
     public void addOrderEntry(OrderEntry orderEntry) {
@@ -28,5 +30,9 @@ public class Order {
 
     public List<OrderEntry> getOrderEntries() {
         return orderEntries;
+    }
+
+    public long getOrderId() {
+        return this.orderId;
     }
 }

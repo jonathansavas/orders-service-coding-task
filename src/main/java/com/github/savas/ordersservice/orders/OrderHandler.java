@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.savas.ordersservice.exceptions.MalformedJsonRequestException;
 import com.github.savas.ordersservice.exceptions.NoItemsAddedException;
+import com.github.savas.ordersservice.exceptions.OrderNotFoundException;
 import com.github.savas.ordersservice.exceptions.ProductNotFoundException;
 import com.github.savas.ordersservice.offers.BogoOffer;
 import com.github.savas.ordersservice.offers.Offer;
@@ -13,10 +14,8 @@ import com.github.savas.ordersservice.products.Apple;
 import com.github.savas.ordersservice.products.Orange;
 import com.github.savas.ordersservice.products.Product;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class OrderHandler {
     private static final Map<String, Product> products = new HashMap<String, Product>() {{
@@ -31,6 +30,9 @@ public class OrderHandler {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static Map<Long, Order> orders = new HashMap<>();
+    private static long orderId = 1;
+
     public static String takeOrder(String orderString) {
         Map<String, Integer> orderReq;
 
@@ -41,7 +43,7 @@ public class OrderHandler {
             throw new MalformedJsonRequestException(e.getMessage());
         }
 
-        Order order = new Order();
+        Order order = new Order(orderId);
         List<String> notFoundProducts = new ArrayList<>();
 
         for (Map.Entry<String, Integer> entry : orderReq.entrySet()) {
@@ -71,11 +73,33 @@ public class OrderHandler {
             throw new NoItemsAddedException("No items were requested in the order.");
         }
 
+        orders.put(orderId, order);
+        orderId++;
+
         return createOrderSummary(order);
+    }
+
+    public static String getOrder(long orderId) {
+        Order order = orders.get(orderId);
+
+        if (order == null) {
+            throw new OrderNotFoundException("The following order ID was not found: " + orderId);
+        }
+
+        return createOrderSummary(order);
+    }
+
+    public static List<String> getAllOrders() {
+        return orders.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(Map.Entry::getValue)
+                .map(OrderHandler::createOrderSummary)
+                .collect(Collectors.toList());
     }
 
     public static String createOrderSummary(Order order) {
         StringBuilder summary = new StringBuilder();
+        summary.append("Order ID: ").append(order.getOrderId()).append("\n");
         summary.append("Order Summary:\n");
         for (OrderEntry entry : order.getOrderEntries()) {
             summary.append(entry.getEntryString()).append("\n");

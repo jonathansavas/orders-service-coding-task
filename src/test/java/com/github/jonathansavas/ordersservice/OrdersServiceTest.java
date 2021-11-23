@@ -13,6 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 public class OrdersServiceTest {
 
     private static final String host = "http://localhost:8080";
@@ -108,5 +112,61 @@ public class OrdersServiceTest {
         } catch (HttpClientErrorException e) {
             Assert.assertSame(HttpStatus.BAD_REQUEST, e.getStatusCode());
         }
+    }
+
+    @Test
+    public void orderNotFoundTest() {
+        String uri = "/orders/999999999";
+
+        try {
+            this.rest.getForEntity(host + uri, String.class);
+            Assert.fail();
+        } catch (HttpClientErrorException e) {
+            Assert.assertSame(HttpStatus.NOT_FOUND, e.getStatusCode());
+        }
+    }
+
+    @Test
+    public void getOrderTest() {
+        String request = "{\"apple\": 3}";
+        String uri = "/order";
+
+        ResponseEntity<String> response = this.rest.postForEntity(host + uri, request, String.class);
+        System.out.println(response.getBody());
+        long orderId = getOrderIdFromResponse(response.getBody());
+
+        uri = "/orders/" + orderId;
+        response = this.rest.getForEntity(host + uri, String.class);
+
+        Assert.assertTrue(response.getBody().contains("Total quantity: 3"));
+        Assert.assertTrue(response.getBody().contains("Total paid: $" +
+                (3 * applePrice - applePrice)
+        ));
+        Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    @Test
+    public void getAllOrdersTest() {
+        String request = "{\"apple\": 3}";
+        String uri = "/order";
+
+        Set<Long> orderIds = new HashSet<>();
+
+        for (int i = 0; i < 5; i++) {
+            ResponseEntity<String> response = this.rest.postForEntity(host + uri, request, String.class);
+            orderIds.add(getOrderIdFromResponse(response.getBody()));
+        }
+
+        uri = "/orders";
+
+        for (Object orderSummary : this.rest.getForEntity(host + uri, List.class).getBody()) {
+            orderIds.remove(getOrderIdFromResponse((String) orderSummary));
+        }
+
+        Assert.assertEquals(0, orderIds.size());
+    }
+
+    public long getOrderIdFromResponse(String response) {
+        return Long.parseLong(response.split("\n")[0].split(": ")[1]);
     }
 }
