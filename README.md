@@ -2,7 +2,7 @@
 
 ## Endpoints
 
-###Place an order:
+### Place an order:
 
 POST /order
 
@@ -16,7 +16,7 @@ POST http://localhost:8080/order
 }
 
 
-###Get a past order by id:
+### Get a past order by id:
 
 GET /orders/{id}
 
@@ -25,7 +25,7 @@ Example:
 GET http://localhost:8080/orders/1
 
 
-###Get all past orders:
+### Get all past orders:
 
 GET /orders
 
