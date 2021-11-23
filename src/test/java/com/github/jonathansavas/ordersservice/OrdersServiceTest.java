@@ -19,6 +19,9 @@ public class OrdersServiceTest {
 
     private final RestTemplate rest = new RestTemplateBuilder().build();
 
+    private final double applePrice = new Apple().getPrice();
+    private final double orangePrice = new Orange().getPrice();
+
     @BeforeClass
     public static void setUp() {
         OrdersService.main(new String[]{});
@@ -37,7 +40,7 @@ public class OrdersServiceTest {
         ResponseEntity<String> response = this.rest.postForEntity(host + uri, request, String.class);
 
         Assert.assertTrue(response.getBody().contains("Total quantity: 2"));
-        Assert.assertTrue(response.getBody().contains("Total: $0.85"));
+        Assert.assertTrue(response.getBody().contains("Total paid: $0.85"));
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
@@ -49,8 +52,8 @@ public class OrdersServiceTest {
         ResponseEntity<String> response = this.rest.postForEntity(host + uri, request, String.class);
 
         Assert.assertTrue(response.getBody().contains("Total quantity: 8"));
-        Assert.assertTrue(response.getBody().contains("Total: $" +
-                (3 * new Apple().getPrice() + 5 * new Orange().getPrice())
+        Assert.assertTrue(response.getBody().contains("Total paid: $" +
+                (3 * applePrice + 5 * orangePrice - applePrice - orangePrice) // discount
         ));
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
     }
@@ -62,8 +65,8 @@ public class OrdersServiceTest {
 
         ResponseEntity<String> response = this.rest.postForEntity(host + uri, request, String.class);
         Assert.assertTrue(response.getBody().contains("Total quantity: 3"));
-        Assert.assertTrue(response.getBody().contains("Total: $" +
-                (3 * new Apple().getPrice())
+        Assert.assertTrue(response.getBody().contains("Total paid: $" +
+                (3 * applePrice - applePrice)
         ));
         Assert.assertEquals(HttpStatus.OK, response.getStatusCode());
     }

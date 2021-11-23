@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.savas.ordersservice.exceptions.MalformedJsonRequestException;
 import com.github.savas.ordersservice.exceptions.NoItemsAddedException;
 import com.github.savas.ordersservice.exceptions.ProductNotFoundException;
+import com.github.savas.ordersservice.offers.BogoOffer;
+import com.github.savas.ordersservice.offers.Offer;
+import com.github.savas.ordersservice.offers.ThreeForTwoOffer;
 import com.github.savas.ordersservice.products.Apple;
 import com.github.savas.ordersservice.products.Orange;
 import com.github.savas.ordersservice.products.Product;
@@ -19,6 +22,11 @@ public class OrderHandler {
     private static final Map<String, Product> products = new HashMap<String, Product>() {{
         put("apple", new Apple());
         put("orange", new Orange());
+    }};
+
+    private static final Map<String, Offer> offers = new HashMap<String, Offer>() {{
+        put("apple", new BogoOffer());
+        put("orange", new ThreeForTwoOffer());
     }};
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -42,9 +50,16 @@ public class OrderHandler {
 
             if (p == null) {
                 notFoundProducts.add(productName);
-            }
+            } else {
+                OrderEntry orderEntry = new OrderEntry(p, entry.getValue());
+                Offer offer = offers.get(productName);
 
-            order.addOrderEntry(new OrderEntry(p, entry.getValue()));
+                if (offer != null) {
+                    orderEntry.applyOffer(offer);
+                }
+
+                order.addOrderEntry(orderEntry);
+            }
         }
 
         if (notFoundProducts.size() > 0) {
@@ -67,7 +82,13 @@ public class OrderHandler {
         }
 
         summary.append("Total quantity: ").append(order.getTotalQuantity()).append("\n");
-        summary.append("Total: $").append(order.getTotal());
+        summary.append("Total paid: $").append(order.getTotal()).append("\n");
+
+        double discount = order.getTotalDiscounts();
+
+        if (discount > 0) {
+            summary.append("Total discount: $").append(discount);
+        }
 
         return summary.toString();
     }

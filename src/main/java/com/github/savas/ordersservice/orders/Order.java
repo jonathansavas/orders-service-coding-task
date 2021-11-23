@@ -22,6 +22,10 @@ public class Order {
         return orderEntries.stream().mapToInt(OrderEntry::getQuantity).sum();
     }
 
+    public double getTotalDiscounts() {
+        return orderEntries.stream().mapToDouble(OrderEntry::getDiscountApplied).sum();
+    }
+
     public List<OrderEntry> getOrderEntries() {
         return orderEntries;
     }
